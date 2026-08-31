@@ -12,7 +12,26 @@ import SwiftUI
 enum ResultMode: String, CaseIterable, Identifiable {
     case delay = "Delay"
     case reverb = "Reverb"
+    case match = "Match"
     var id: String { rawValue }
+}
+
+/// Card with a pink section title, used across the results modes for a consistent look.
+struct SectionCard<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(Color.brandPink)
+            content
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: 12))
+    }
 }
 
 struct ResultsView: View {
@@ -20,6 +39,8 @@ struct ResultsView: View {
     @ObservedObject var reverb: ReverbCalculator
     /// Non-nil when shown as a sheet (compact width); nil when inline beside the input.
     var onClose: (() -> Void)?
+    /// Lets Match mode push a tempo back to the input field.
+    var onPickBPM: ((Double) -> Void)?
 
     @AppStorage("resultMode") private var modeRaw = ResultMode.delay.rawValue
     @AppStorage("unit") private var unitRaw = TimeUnit.milliseconds.rawValue
@@ -50,6 +71,9 @@ struct ResultsView: View {
                 case .reverb:
                     ReverbHelperView(reverb: reverb, bpm: calculator.bpm,
                                      copiedID: $copiedID, flash: flash)
+                case .match:
+                    MatchView(calculator: calculator, onPickBPM: onPickBPM,
+                              copiedID: $copiedID, flash: flash)
                 }
             } else {
                 ContentUnavailableCompat(
@@ -102,7 +126,7 @@ struct ResultsView: View {
                 }
             }
 
-            if calculator.isValidBPM {
+            if calculator.isValidBPM && mode != .match {
                 HStack {
                     Button {
                         Clipboard.copy(copyAllText)
@@ -243,15 +267,7 @@ struct ReverbHelperView: View {
 
     @ViewBuilder
     private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(Color.brandPink)
-            content()
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: 12))
+        SectionCard(title: title) { content() }
     }
 
     private func row(_ name: String, _ value: String, _ id: String) -> some View {
@@ -259,6 +275,112 @@ struct ReverbHelperView: View {
             Clipboard.copy(value)
             flash(id)
         }
+    }
+}
+
+// MARK: - Reverse lookup
+
+struct MatchView: View {
+    @ObservedObject var calculator: TimeCalculator
+    var onPickBPM: ((Double) -> Void)?
+    @Binding var copiedID: String?
+    let flash: (String) -> Void
+
+    @AppStorage("matchText") private var text = "320"
+    @AppStorage("matchUseHz") private var useHz = false
+
+    /// The typed value converted to milliseconds (a period, if entered as Hz).
+    private var targetMs: Double {
+        guard let v = Double(text.replacingOccurrences(of: ",", with: ".")), v > 0 else { return 0 }
+        return useHz ? 1_000.0 / v : v
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                SectionCard(title: "Target") {
+                    HStack {
+                        TextField(useHz ? "Frequency" : "Delay time", text: $text)
+                            .textFieldStyle(.roundedBorder)
+                            .monospacedDigit()
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
+                            .accessibilityLabel(useHz ? "Target frequency in hertz" : "Target time in milliseconds")
+                        Picker("Unit", selection: $useHz) {
+                            Text("ms").tag(false)
+                            Text("Hz").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(width: 108)
+                    }
+                }
+
+                if targetMs > 0 {
+                    let matches = calculator.matches(toMs: targetMs)
+
+                    SectionCard(title: "Closest at \(Int(calculator.bpm)) BPM") {
+                        ForEach(Array(matches.enumerated()), id: \.element.id) { index, match in
+                            matchRow(match)
+                            if index < matches.count - 1 { Divider() }
+                        }
+                    }
+
+                    if let best = matches.first {
+                        SectionCard(title: "Lock to grid") {
+                            Text("\(best.note.displayName) hits \(displayTarget) exactly at \(bpmText(best.bpmForExact)) BPM.")
+                                .font(.subheadline)
+                            if let onPickBPM, TimeCalculator.validRange.contains(best.bpmForExact) {
+                                Button("Use \(bpmText(best.bpmForExact)) BPM") { onPickBPM(best.bpmForExact) }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.brandPink)
+                            }
+                        }
+                    }
+                } else {
+                    Text("Enter a delay time you dialled in by ear to find the closest musical note value — and the tempo that would land it exactly on the grid.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+        }
+    }
+
+    private var displayTarget: String {
+        useHz ? "\(text) Hz" : "\(text) ms"
+    }
+
+    private func bpmText(_ v: Double) -> String {
+        v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v)
+    }
+
+    private func matchRow(_ m: NoteMatch) -> some View {
+        let exact = abs(m.deltaMs) < 0.05
+        let delta = exact
+            ? "exact"
+            : String(format: "%@%.1f ms", m.deltaMs > 0 ? "+" : "−", abs(m.deltaMs))
+        return HStack {
+            Text(m.note.displayName)
+            Spacer()
+            Text(String(format: "%.1f ms", m.ms))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            Text(delta)
+                .font(.caption)
+                .monospacedDigit()
+                .foregroundStyle(exact ? Color.green : .secondary)
+                .frame(minWidth: 64, alignment: .trailing)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            Clipboard.copy(String(format: "%.1f ms", m.ms))
+            flash(m.id)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(m.note.displayName), \(String(format: "%.1f milliseconds", m.ms)), \(exact ? "exact" : delta)")
+        .accessibilityHint("Double tap to copy")
     }
 }
 

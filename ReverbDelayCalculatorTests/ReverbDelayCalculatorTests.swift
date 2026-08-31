@@ -76,6 +76,45 @@ final class TimeCalculatorTests: XCTestCase {
     }
 }
 
+final class NoteMatchTests: XCTestCase {
+
+    func testExactHitReportsZeroDeltaAndSameBPM() {
+        let calc = TimeCalculator(bpm: 120)
+        let best = calc.matches(toMs: 500).first!            // quarter note == 500 ms
+        XCTAssertEqual(best.note.displayName, "Quarter Note")
+        XCTAssertEqual(best.deltaMs, 0, accuracy: 0.0001)
+        XCTAssertEqual(best.bpmForExact, 120, accuracy: 0.0001)
+    }
+
+    func testNearMissKeepsNearestAndSolvesForTempo() {
+        let calc = TimeCalculator(bpm: 120)
+        let best = calc.matches(toMs: 510).first!
+        XCTAssertEqual(best.note.displayName, "Quarter Note")
+        XCTAssertEqual(best.deltaMs, -10, accuracy: 0.0001)  // 500 - 510
+        XCTAssertEqual(best.bpmForExact, 120.0 * 500 / 510, accuracy: 0.0001)  // ~117.6
+    }
+
+    func testDottedEighthMatch() {
+        let calc = TimeCalculator(bpm: 120)
+        let best = calc.matches(toMs: 375).first!
+        XCTAssertEqual(best.note.displayName, "Dotted Eighth Note")
+        XCTAssertEqual(best.deltaMs, 0, accuracy: 0.0001)
+    }
+
+    func testResultsAreSortedByAbsoluteDeltaAndLimited() {
+        let calc = TimeCalculator(bpm: 128)
+        let results = calc.matches(toMs: 300, limit: 6)
+        XCTAssertEqual(results.count, 6)
+        let deltas = results.map { abs($0.deltaMs) }
+        XCTAssertEqual(deltas, deltas.sorted())
+    }
+
+    func testGuards() {
+        XCTAssertTrue(TimeCalculator(bpm: 0).matches(toMs: 300).isEmpty)
+        XCTAssertTrue(TimeCalculator(bpm: 120).matches(toMs: 0).isEmpty)
+    }
+}
+
 final class ReverbCalculatorTests: XCTestCase {
 
     func testDefaultPlatePresetAt120() {

@@ -24,7 +24,8 @@ struct ContentView: View {
                     ScrollView { inputColumn.padding(24) }
                         .frame(maxWidth: 420)
                     Divider()
-                    ResultsView(calculator: timeCalculator, reverb: reverbCalculator, onClose: nil)
+                    ResultsView(calculator: timeCalculator, reverb: reverbCalculator,
+                                onClose: nil, onPickBPM: applyBPM)
                 }
             }
         }
@@ -35,7 +36,8 @@ struct ContentView: View {
         }
         .onChange(of: bpmText) { _ in syncBPM() }
         .sheet(isPresented: $showResults) {
-            ResultsView(calculator: timeCalculator, reverb: reverbCalculator) { showResults = false }
+            ResultsView(calculator: timeCalculator, reverb: reverbCalculator,
+                        onClose: { showResults = false }, onPickBPM: applyBPM)
                 .presentationDetentsCompat()
         }
         .sheet(isPresented: $showTapTempo) {
@@ -130,6 +132,11 @@ struct ContentView: View {
 
     private func formattedBPM(_ value: Double) -> String {
         value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+
+    /// Push a tempo into the input field (used by Tap Tempo and Match mode).
+    private func applyBPM(_ value: Double) {
+        bpmText = formattedBPM((value * 10).rounded() / 10)
     }
 }
 

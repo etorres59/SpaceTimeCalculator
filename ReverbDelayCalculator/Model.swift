@@ -189,6 +189,38 @@ final class TimeCalculator: ObservableObject {
     }
 }
 
+// MARK: - Reverse lookup (time -> note)
+
+/// One subdivision measured against a target time the user dialled in by ear.
+struct NoteMatch: Identifiable {
+    let note: NoteDuration
+    /// This subdivision's length at the current tempo.
+    let ms: Double
+    /// `ms - target` — signed, so the sign tells you which way you're off.
+    let deltaMs: Double
+    /// The tempo that would make this subdivision land exactly on the target.
+    let bpmForExact: Double
+
+    var id: String { note.id }
+}
+
+extension TimeCalculator {
+    /// Subdivisions closest to `targetMs` at the current tempo, nearest first.
+    func matches(toMs targetMs: Double, limit: Int = 6) -> [NoteMatch] {
+        guard isValidBPM, targetMs > 0 else { return [] }
+        return NoteDuration.all
+            .map { note in
+                let ms = note.milliseconds(bpm: bpm)
+                // note.ms is k / bpm for a constant k, so the exact-fit tempo scales inversely.
+                let exact = ms > 0 ? bpm * ms / targetMs : 0
+                return NoteMatch(note: note, ms: ms, deltaMs: ms - targetMs, bpmForExact: exact)
+            }
+            .sorted { abs($0.deltaMs) < abs($1.deltaMs) }
+            .prefix(limit)
+            .map { $0 }
+    }
+}
+
 // MARK: - Reverb helper
 
 /// How long the reverb tail rings, expressed in quarter-note beats so it scales with tempo.
