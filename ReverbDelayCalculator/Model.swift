@@ -293,8 +293,6 @@ final class ReverbCalculator: ObservableObject {
 /// Uses a monotonic clock, a rolling window, median-based outlier rejection,
 /// and auto-resets a stale sequence.
 final class TapTempoCalculator: ObservableObject {
-    /// Taps needed before a BPM is shown (== `windowSize` intervals + 1).
-    static let requiredTaps = 8
     /// Longest gap between taps before the sequence is considered abandoned.
     private static let staleGap: TimeInterval = 2.0
     /// Fastest accepted tap (guards against double-triggers). ~6000 BPM.
@@ -319,9 +317,9 @@ final class TapTempoCalculator: ObservableObject {
             return "\(Int(bpm.rounded())) BPM — keep tapping to refine, or Restart."
         }
         if tapCount == 0 {
-            return "Tap the button \(Self.requiredTaps) times in time."
+            return "Tap along with the tempo."
         }
-        return "Keep tapping…  \(tapCount) / \(Self.requiredTaps)"
+        return "Keep tapping…"
     }
 
     func registerTap() {
