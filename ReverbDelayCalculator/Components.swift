@@ -465,6 +465,74 @@ struct TapTempoView: View {
     }
 }
 
+// MARK: - Metronome
+
+struct MetronomeView: View {
+    @ObservedObject var metronome: MetronomeEngine
+    let bpm: Double
+    var onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Metronome")
+                .font(BrandFont.display(30, relativeTo: .largeTitle))
+                .foregroundStyle(Color.brandPurple)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+
+            Text("\(Int(bpm)) BPM")
+                .font(.system(size: 26, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.brandPink)
+
+            HStack(spacing: 14) {
+                ForEach(0..<metronome.beatsPerBar, id: \.self) { index in
+                    Circle()
+                        .fill(dotColor(index))
+                        .frame(width: index == 0 ? 22 : 16, height: index == 0 ? 22 : 16)
+                        .scaleEffect(metronome.isRunning && metronome.beat == index ? 1.6 : 1)
+                        .animation(.easeOut(duration: 0.12), value: metronome.beat)
+                }
+            }
+            .frame(height: 44)
+            .accessibilityHidden(true)
+
+            Button(action: metronome.toggle) {
+                Image(systemName: metronome.isRunning ? "stop.fill" : "play.fill")
+                    .font(.system(size: 46))
+                    .frame(width: 128, height: 128)
+                    .background(metronome.isRunning ? Color.brandPink : Color.brandPurple, in: Circle())
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(metronome.isRunning ? "Stop metronome" : "Start metronome")
+
+            Stepper("Beats per bar: \(metronome.beatsPerBar)", value: $metronome.beatsPerBar, in: 1...12)
+                .frame(maxWidth: 280)
+
+            Spacer()
+
+            Button("Close") {
+                metronome.stop()
+                onClose()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .frame(maxWidth: 480)
+        .background(Color.surface)
+        .onAppear { metronome.bpm = bpm }
+        .onChange(of: bpm) { newValue in metronome.bpm = newValue }
+        .onDisappear { metronome.stop() }
+    }
+
+    private func dotColor(_ index: Int) -> Color {
+        if metronome.isRunning && metronome.beat == index {
+            return index == 0 ? .brandPink : .brandPurple
+        }
+        return .secondary.opacity(0.35)
+    }
+}
+
 // MARK: - Small compatibility shim
 
 /// `ContentUnavailableView` is macOS 14+/iOS 17+; this keeps a 13.5 deployment target working.

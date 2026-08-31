@@ -5,11 +5,13 @@ struct ContentView: View {
     @StateObject private var timeCalculator = TimeCalculator()
     @StateObject private var tapTempoCalculator = TapTempoCalculator()
     @StateObject private var reverbCalculator = ReverbCalculator()
+    @StateObject private var metronome = MetronomeEngine()
 
     @AppStorage("lastBPM") private var lastBPM = 120.0
     @State private var bpmText = ""
     @State private var showResults = false
     @State private var showTapTempo = false
+    @State private var showMetronome = false
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -47,6 +49,12 @@ struct ContentView: View {
                 if isCompact { showResults = true }
             } onClose: {
                 showTapTempo = false
+            }
+        }
+        .sheet(isPresented: $showMetronome) {
+            MetronomeView(metronome: metronome,
+                          bpm: timeCalculator.isValidBPM ? timeCalculator.bpm : 120) {
+                showMetronome = false
             }
         }
     }
@@ -103,13 +111,22 @@ struct ContentView: View {
                 .disabled(!timeCalculator.isValidBPM)
             }
 
-            Button {
-                showTapTempo = true
-            } label: {
-                Label("Tap Tempo", systemImage: "hand.tap")
-                    .font(.title3)
-                    .frame(maxWidth: .infinity)
+            HStack(spacing: 12) {
+                Button {
+                    showTapTempo = true
+                } label: {
+                    Label("Tap Tempo", systemImage: "hand.tap")
+                        .frame(maxWidth: .infinity)
+                }
+                Button {
+                    showMetronome = true
+                } label: {
+                    Label(metronome.isRunning ? "Playing" : "Metronome",
+                          systemImage: metronome.isRunning ? "metronome.fill" : "metronome")
+                        .frame(maxWidth: .infinity)
+                }
             }
+            .font(.body)
             .buttonStyle(.bordered)
             .tint(.brandPurple)
 
