@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var timeCalculator = TimeCalculator()
     @StateObject private var tapTempoCalculator = TapTempoCalculator()
+    @StateObject private var reverbCalculator = ReverbCalculator()
 
     @AppStorage("lastBPM") private var lastBPM = 120.0
     @State private var bpmText = ""
@@ -23,7 +24,7 @@ struct ContentView: View {
                     ScrollView { inputColumn.padding(24) }
                         .frame(maxWidth: 420)
                     Divider()
-                    ResultsView(calculator: timeCalculator, onClose: nil)
+                    ResultsView(calculator: timeCalculator, reverb: reverbCalculator, onClose: nil)
                 }
             }
         }
@@ -34,7 +35,7 @@ struct ContentView: View {
         }
         .onChange(of: bpmText) { _ in syncBPM() }
         .sheet(isPresented: $showResults) {
-            ResultsView(calculator: timeCalculator) { showResults = false }
+            ResultsView(calculator: timeCalculator, reverb: reverbCalculator) { showResults = false }
                 .presentationDetentsCompat()
         }
         .sheet(isPresented: $showTapTempo) {

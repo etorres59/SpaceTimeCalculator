@@ -9,15 +9,27 @@ import SwiftUI
 
 // MARK: - Results
 
+enum ResultMode: String, CaseIterable, Identifiable {
+    case delay = "Delay"
+    case reverb = "Reverb"
+    var id: String { rawValue }
+}
+
 struct ResultsView: View {
     @ObservedObject var calculator: TimeCalculator
+    @ObservedObject var reverb: ReverbCalculator
     /// Non-nil when shown as a sheet (compact width); nil when inline beside the input.
     var onClose: (() -> Void)?
 
+    @AppStorage("resultMode") private var modeRaw = ResultMode.delay.rawValue
     @AppStorage("unit") private var unitRaw = TimeUnit.milliseconds.rawValue
     @AppStorage("sampleRate") private var sampleRateRaw = SampleRate.sr48000.rawValue
     @State private var copiedID: String?
 
+    private var mode: ResultMode {
+        get { ResultMode(rawValue: modeRaw) ?? .delay }
+        nonmutating set { modeRaw = newValue.rawValue }
+    }
     private var unit: TimeUnit {
         get { TimeUnit(rawValue: unitRaw) ?? .milliseconds }
         nonmutating set { unitRaw = newValue.rawValue }
@@ -32,7 +44,13 @@ struct ResultsView: View {
             header
             Divider()
             if calculator.isValidBPM {
-                results
+                switch mode {
+                case .delay:
+                    results
+                case .reverb:
+                    ReverbHelperView(reverb: reverb, bpm: calculator.bpm,
+                                     copiedID: $copiedID, flash: flash)
+                }
             } else {
                 ContentUnavailableCompat(
                     title: "No tempo yet",
@@ -41,6 +59,12 @@ struct ResultsView: View {
             }
         }
         .background(Color.surface)
+    }
+
+    private var copyAllText: String {
+        mode == .delay
+            ? calculator.exportText(unit: unit, sampleRate: sampleRate)
+            : reverb.exportText(bpm: calculator.bpm)
     }
 
     // MARK: Header
@@ -58,29 +82,36 @@ struct ResultsView: View {
                 }
             }
 
-            Picker("Unit", selection: Binding(get: { unit }, set: { unit = $0 })) {
-                ForEach(TimeUnit.allCases) { Text($0.label).tag($0) }
+            Picker("Mode", selection: Binding(get: { mode }, set: { mode = $0 })) {
+                ForEach(ResultMode.allCases) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
 
-            if unit == .samples {
-                Picker("Sample rate", selection: Binding(get: { sampleRate }, set: { sampleRate = $0 })) {
-                    ForEach(SampleRate.allCases) { Text($0.label).tag($0) }
+            if mode == .delay {
+                Picker("Unit", selection: Binding(get: { unit }, set: { unit = $0 })) {
+                    ForEach(TimeUnit.allCases) { Text($0.label).tag($0) }
                 }
-                .pickerStyle(.menu)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .pickerStyle(.segmented)
+
+                if unit == .samples {
+                    Picker("Sample rate", selection: Binding(get: { sampleRate }, set: { sampleRate = $0 })) {
+                        ForEach(SampleRate.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             if calculator.isValidBPM {
                 HStack {
                     Button {
-                        Clipboard.copy(calculator.exportText(unit: unit, sampleRate: sampleRate))
+                        Clipboard.copy(copyAllText)
                         flash("all")
                     } label: {
                         Label(copiedID == "all" ? "Copied" : "Copy all", systemImage: copiedID == "all" ? "checkmark" : "doc.on.doc")
                     }
                     Spacer()
-                    ShareLink(item: calculator.exportText(unit: unit, sampleRate: sampleRate)) {
+                    ShareLink(item: copyAllText) {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
                 }
@@ -152,6 +183,82 @@ struct NoteRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(name), \(value)")
         .accessibilityHint("Double tap to copy")
+    }
+}
+
+// MARK: - Reverb helper
+
+struct ReverbHelperView: View {
+    @ObservedObject var reverb: ReverbCalculator
+    let bpm: Double
+    @Binding var copiedID: String?
+    let flash: (String) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                card("Space") {
+                    Picker("Space", selection: Binding(get: { reverb.space }, set: { reverb.apply($0) })) {
+                        ForEach(ReverbSpace.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                card("Adjust") {
+                    HStack {
+                        Text("Pre-delay")
+                        Spacer()
+                        Picker("Pre-delay", selection: $reverb.preDelay) {
+                            ForEach(ReverbCalculator.preDelayChoices) { Text($0.fractionLabel).tag($0) }
+                        }
+                        .labelsHidden()
+                    }
+                    Divider()
+                    HStack {
+                        Text("Decay")
+                        Spacer()
+                        Picker("Decay", selection: $reverb.decay) {
+                            ForEach(ReverbDecayLength.allCases) { Text($0.rawValue).tag($0) }
+                        }
+                        .labelsHidden()
+                    }
+                }
+
+                card("Suggested") {
+                    row("Pre-delay", String(format: "%.1f ms", reverb.preDelayMs(bpm: bpm)), "reverb-pre")
+                    Divider()
+                    row("Decay", String(format: "%.0f ms", reverb.decayMs(bpm: bpm)), "reverb-decay")
+                    Divider()
+                    row("Total", String(format: "%.0f ms", reverb.totalMs(bpm: bpm)), "reverb-total")
+                }
+
+                Text("Pre-delay keeps the dry hit clear before the tail; total is when the tail has faded, so the reverb resolves before the next phrase.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        }
+    }
+
+    @ViewBuilder
+    private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(Color.brandPink)
+            content()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func row(_ name: String, _ value: String, _ id: String) -> some View {
+        NoteRow(name: name, value: value, isCopied: copiedID == id) {
+            Clipboard.copy(value)
+            flash(id)
+        }
     }
 }
 

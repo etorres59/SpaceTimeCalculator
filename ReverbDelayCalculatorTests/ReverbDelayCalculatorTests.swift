@@ -76,6 +76,44 @@ final class TimeCalculatorTests: XCTestCase {
     }
 }
 
+final class ReverbCalculatorTests: XCTestCase {
+
+    func testDefaultPlatePresetAt120() {
+        let r = ReverbCalculator()          // defaults to .plate
+        XCTAssertEqual(r.preDelayMs(bpm: 120), 62.5, accuracy: 0.001)   // 1/32 note
+        XCTAssertEqual(r.decayMs(bpm: 120), 2000, accuracy: 0.001)      // 1 bar
+        XCTAssertEqual(r.totalMs(bpm: 120), 2062.5, accuracy: 0.001)
+    }
+
+    func testApplyPresetSetsPreDelayAndDecay() {
+        let r = ReverbCalculator()
+        r.apply(.hall)
+        XCTAssertEqual(r.space, .hall)
+        XCTAssertEqual(r.preDelay, .sixteenth)
+        XCTAssertEqual(r.decay, .twoBars)
+        XCTAssertEqual(r.preDelayMs(bpm: 120), 125, accuracy: 0.001)
+        XCTAssertEqual(r.decayMs(bpm: 120), 4000, accuracy: 0.001)
+    }
+
+    func testPreDelayChoicesAreEighthOrShorter() {
+        XCTAssertEqual(ReverbCalculator.preDelayChoices,
+                       [.eighth, .sixteenth, .thirtySecond, .sixtyFourth])
+    }
+
+    func testUserOverrideKeepsCustomValues() {
+        let r = ReverbCalculator()
+        r.apply(.room)
+        r.preDelay = .sixtyFourth
+        r.decay = .fourBars
+        XCTAssertEqual(r.preDelayMs(bpm: 120), 500 * NoteBase.sixtyFourth.beats, accuracy: 0.001)
+        XCTAssertEqual(r.decayMs(bpm: 120), 500 * ReverbDecayLength.fourBars.beats, accuracy: 0.001)
+    }
+
+    func testInvalidBPMExportGuards() {
+        XCTAssertEqual(ReverbCalculator().exportText(bpm: 0), "Enter a valid tempo first.")
+    }
+}
+
 final class TapTempoCalculatorTests: XCTestCase {
 
     /// Advances a fake clock; each `tick(_:)` moves time forward by `seconds`.

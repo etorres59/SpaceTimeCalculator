@@ -23,6 +23,19 @@ enum NoteBase: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Producer-style fraction, e.g. "1/16".
+    var fractionLabel: String {
+        switch self {
+        case .whole: return "1/1"
+        case .half: return "1/2"
+        case .quarter: return "1/4"
+        case .eighth: return "1/8"
+        case .sixteenth: return "1/16"
+        case .thirtySecond: return "1/32"
+        case .sixtyFourth: return "1/64"
+        }
+    }
+
     /// Length in quarter-note beats (a quarter note == 1 beat).
     var beats: Double {
         switch self {
@@ -173,6 +186,103 @@ final class TimeCalculator: ObservableObject {
             }
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+// MARK: - Reverb helper
+
+/// How long the reverb tail rings, expressed in quarter-note beats so it scales with tempo.
+enum ReverbDecayLength: String, CaseIterable, Identifiable {
+    case oneBeat = "1 beat"
+    case halfNote = "1/2 note"
+    case dottedHalf = "Dotted 1/2"
+    case oneBar = "1 bar"
+    case barAndHalf = "1.5 bars"
+    case twoBars = "2 bars"
+    case threeBars = "3 bars"
+    case fourBars = "4 bars"
+
+    var id: String { rawValue }
+
+    /// Assumes 4/4; a "bar" is 4 quarter-note beats.
+    var beats: Double {
+        switch self {
+        case .oneBeat: return 1
+        case .halfNote: return 2
+        case .dottedHalf: return 3
+        case .oneBar: return 4
+        case .barAndHalf: return 6
+        case .twoBars: return 8
+        case .threeBars: return 12
+        case .fourBars: return 16
+        }
+    }
+}
+
+/// A named reverb "space" — a sensible starting pre-delay and decay length that
+/// the user can then adjust. Mirrors how producers reach for a room/plate/hall
+/// and dial from there.
+enum ReverbSpace: String, CaseIterable, Identifiable {
+    case ambience = "Ambience"
+    case room = "Room"
+    case plate = "Plate"
+    case hall = "Hall"
+    case cathedral = "Cathedral"
+
+    var id: String { rawValue }
+
+    var preDelay: NoteBase {
+        switch self {
+        case .ambience: return .sixtyFourth
+        case .room: return .thirtySecond
+        case .plate: return .thirtySecond
+        case .hall: return .sixteenth
+        case .cathedral: return .sixteenth
+        }
+    }
+
+    var decay: ReverbDecayLength {
+        switch self {
+        case .ambience: return .oneBeat
+        case .room: return .halfNote
+        case .plate: return .oneBar
+        case .hall: return .twoBars
+        case .cathedral: return .threeBars
+        }
+    }
+}
+
+/// Tempo-synced reverb suggestion: pre-delay before the tail, decay length of
+/// the tail, and the total so it resolves before the next musical landmark.
+final class ReverbCalculator: ObservableObject {
+    /// Pre-delay is only offered for eighth-note and shorter — longer values smear the transient.
+    static let preDelayChoices: [NoteBase] = NoteBase.allCases.filter { $0.beats <= 0.5 }
+
+    @Published var space: ReverbSpace = .plate
+    @Published var preDelay: NoteBase = .thirtySecond
+    @Published var decay: ReverbDecayLength = .oneBar
+
+    /// Snap pre-delay and decay to a preset; the user can still tweak afterwards.
+    func apply(_ space: ReverbSpace) {
+        self.space = space
+        preDelay = space.preDelay
+        decay = space.decay
+    }
+
+    private func quarterMs(_ bpm: Double) -> Double { bpm > 0 ? 60_000.0 / bpm : 0 }
+
+    func preDelayMs(bpm: Double) -> Double { quarterMs(bpm) * preDelay.beats }
+    func decayMs(bpm: Double) -> Double { quarterMs(bpm) * decay.beats }
+    func totalMs(bpm: Double) -> Double { preDelayMs(bpm: bpm) + decayMs(bpm: bpm) }
+
+    func exportText(bpm: Double) -> String {
+        guard TimeCalculator.validRange.contains(bpm) else { return "Enter a valid tempo first." }
+        return """
+        Space & Time — reverb @ \(Int(bpm)) BPM (\(space.rawValue))
+          Pre-delay (\(preDelay.fractionLabel)): \(String(format: "%.1f ms", preDelayMs(bpm: bpm)))
+          Decay (\(decay.rawValue)): \(String(format: "%.0f ms", decayMs(bpm: bpm)))
+          Total: \(String(format: "%.0f ms", totalMs(bpm: bpm)))
+        """
     }
 }
 
