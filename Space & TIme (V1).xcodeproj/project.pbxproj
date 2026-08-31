@@ -17,6 +17,9 @@
 		878392812CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 878392802CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf */; };
 		878392822CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 878392802CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf */; };
 		878392832CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 878392802CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf */; };
+		AA1000000000000000001002 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000001001 /* Model.swift */; };
+		AA1000000000000000002002 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000002001 /* DesignSystem.swift */; };
+		AA1000000000000000003002 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000003001 /* Components.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +52,9 @@
 		873975DA2CC1A06B0022D8D1 /* ReverbDelayCalculatorUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReverbDelayCalculatorUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		878392772CC95F9800C6E611 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		878392802CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "NaNHoloGigawide-Ultra.ttf"; sourceTree = "<group>"; };
+		AA1000000000000000001001 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
+		AA1000000000000000002001 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		AA1000000000000000003001 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +109,9 @@
 				878392802CC9627200C6E611 /* NaNHoloGigawide-Ultra.ttf */,
 				873975BD2CC1A0690022D8D1 /* ReverbDelayCalculatorApp.swift */,
 				873975BF2CC1A0690022D8D1 /* ContentView.swift */,
+				AA1000000000000000001001 /* Model.swift */,
+				AA1000000000000000002001 /* DesignSystem.swift */,
+				AA1000000000000000003001 /* Components.swift */,
 				873975C12CC1A06A0022D8D1 /* Assets.xcassets */,
 				873975C32CC1A06A0022D8D1 /* Preview Content */,
 			);
@@ -269,6 +278,9 @@
 			files = (
 				873975C02CC1A0690022D8D1 /* ContentView.swift in Sources */,
 				873975BE2CC1A0690022D8D1 /* ReverbDelayCalculatorApp.swift in Sources */,
+				AA1000000000000000001002 /* Model.swift in Sources */,
+				AA1000000000000000002002 /* DesignSystem.swift in Sources */,
+				AA1000000000000000003002 /* Components.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -446,23 +458,24 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportsDocumentBrowser = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ETAudio.ReverbDelayCalculator;
+				PRODUCT_BUNDLE_IDENTIFIER = "ETAudio.Space-Time";
+				PRODUCT_MODULE_NAME = ReverbDelayCalculator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = macosx;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -486,8 +499,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportsDocumentBrowser = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -495,14 +507,16 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ETAudio.Space-Time";
+				PRODUCT_MODULE_NAME = ReverbDelayCalculator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = macosx;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -515,9 +529,12 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ETAudio.ReverbDelayCalculatorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -534,9 +551,12 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ETAudio.ReverbDelayCalculatorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

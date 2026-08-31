@@ -1,36 +1,136 @@
 //
 //  ReverbDelayCalculatorTests.swift
-//  ReverbDelayCalculatorTests
-//
-//  Created by Evan Torres on 10/17/24.
+//  Space & Time
 //
 
 import XCTest
 @testable import ReverbDelayCalculator
 
-final class ReverbDelayCalculatorTests: XCTestCase {
+final class NoteDurationTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func testQuarterNoteMilliseconds() {
+        let quarter = NoteDuration(base: .quarter, modifier: .straight)
+        XCTAssertEqual(quarter.milliseconds(bpm: 120), 500, accuracy: 0.0001)
+        XCTAssertEqual(quarter.milliseconds(bpm: 60), 1000, accuracy: 0.0001)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testWholeAndModifiers() {
+        XCTAssertEqual(NoteDuration(base: .whole, modifier: .straight).milliseconds(bpm: 120), 2000, accuracy: 0.0001)
+        XCTAssertEqual(NoteDuration(base: .quarter, modifier: .dotted).milliseconds(bpm: 120), 750, accuracy: 0.0001)
+        XCTAssertEqual(NoteDuration(base: .eighth, modifier: .triplet).milliseconds(bpm: 120), 166.6667, accuracy: 0.001)
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testHertzIsInversePeriod() {
+        let quarter = NoteDuration(base: .quarter, modifier: .straight)
+        XCTAssertEqual(quarter.hertz(bpm: 120), 2.0, accuracy: 0.0001)   // 500 ms period
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    func testSamplesAtSampleRate() {
+        let quarter = NoteDuration(base: .quarter, modifier: .straight)
+        XCTAssertEqual(quarter.samples(bpm: 120, sampleRate: 48_000), 24_000, accuracy: 0.0001)
+    }
+
+    func testZeroBPMDoesNotProduceInfinity() {
+        let quarter = NoteDuration(base: .quarter, modifier: .straight)
+        XCTAssertEqual(quarter.milliseconds(bpm: 0), 0)
+        XCTAssertEqual(quarter.hertz(bpm: 0), 0)
+        XCTAssertFalse(quarter.milliseconds(bpm: 0).isInfinite)
+    }
+
+    func testGroupedCoversEverySubdivisionOnce() {
+        XCTAssertEqual(NoteDuration.all.count, NoteBase.allCases.count * NoteModifier.allCases.count)
+        XCTAssertEqual(NoteDuration.grouped.reduce(0) { $0 + $1.durations.count }, NoteDuration.all.count)
+    }
+}
+
+final class TimeCalculatorTests: XCTestCase {
+
+    func testValidRangeBoundaries() {
+        let calc = TimeCalculator()
+        calc.bpm = 19;  XCTAssertFalse(calc.isValidBPM)
+        calc.bpm = 20;  XCTAssertTrue(calc.isValidBPM)
+        calc.bpm = 999; XCTAssertTrue(calc.isValidBPM)
+        calc.bpm = 1000; XCTAssertFalse(calc.isValidBPM)
+    }
+
+    func testFormattedRespectsUnit() {
+        let calc = TimeCalculator(bpm: 120)
+        let quarter = NoteDuration(base: .quarter, modifier: .straight)
+        XCTAssertEqual(calc.formatted(quarter, unit: .milliseconds, sampleRate: .sr48000), "500.0 ms")
+        XCTAssertEqual(calc.formatted(quarter, unit: .hertz, sampleRate: .sr48000), "2.00 Hz")
+        XCTAssertEqual(calc.formatted(quarter, unit: .samples, sampleRate: .sr48000), "24000 smp")
+    }
+
+    func testFormattedWithInvalidBPM() {
+        let calc = TimeCalculator(bpm: 0)
+        let quarter = NoteDuration(base: .quarter, modifier: .straight)
+        XCTAssertEqual(calc.formatted(quarter, unit: .milliseconds, sampleRate: .sr48000), "—")
+    }
+
+    func testExportTextContainsHeaderAndRows() {
+        let calc = TimeCalculator(bpm: 128)
+        let text = calc.exportText(unit: .milliseconds, sampleRate: .sr48000)
+        XCTAssertTrue(text.contains("128 BPM"))
+        XCTAssertTrue(text.contains("Quarter Notes"))
+        XCTAssertTrue(text.contains("Dotted Eighth Note"))
+    }
+}
+
+final class TapTempoCalculatorTests: XCTestCase {
+
+    /// Advances a fake clock; each `tick(_:)` moves time forward by `seconds`.
+    private final class FakeClock {
+        var t: TimeInterval = 1_000
+        func read() -> TimeInterval { t }
+        func advance(_ seconds: TimeInterval) { t += seconds }
+    }
+
+    func testSteadyTappingEstimatesTempo() {
+        let clock = FakeClock()
+        let tap = TapTempoCalculator(now: clock.read)
+        // 120 BPM == 0.5 s between taps.
+        tap.registerTap()
+        for _ in 0..<7 {
+            clock.advance(0.5)
+            tap.registerTap()
         }
+        XCTAssertNotNil(tap.calculatedBPM)
+        XCTAssertEqual(tap.calculatedBPM!, 120, accuracy: 0.5)
     }
 
+    func testOutlierTapIsRejected() {
+        let clock = FakeClock()
+        let tap = TapTempoCalculator(now: clock.read)
+        tap.registerTap()
+        for _ in 0..<5 { clock.advance(0.5); tap.registerTap() }
+        let before = tap.calculatedBPM!
+        clock.advance(0.9)          // a fat-fingered slow tap, within the stale window
+        tap.registerTap()
+        XCTAssertEqual(tap.calculatedBPM!, before, accuracy: 1.0)
+    }
+
+    func testStaleSequenceResets() {
+        let clock = FakeClock()
+        let tap = TapTempoCalculator(now: clock.read)
+        tap.registerTap()
+        clock.advance(0.5); tap.registerTap()
+        clock.advance(0.5); tap.registerTap()
+        XCTAssertEqual(tap.tapCount, 3)
+        clock.advance(5)            // long gap → abandon
+        tap.registerTap()
+        XCTAssertEqual(tap.tapCount, 1)
+        XCTAssertNil(tap.calculatedBPM)
+    }
+
+    func testDoubleAndHalve() {
+        let clock = FakeClock()
+        let tap = TapTempoCalculator(now: clock.read)
+        tap.registerTap()
+        for _ in 0..<7 { clock.advance(0.5); tap.registerTap() }
+        let base = tap.calculatedBPM!
+        tap.double()
+        XCTAssertEqual(tap.calculatedBPM!, min(999, base * 2), accuracy: 0.001)
+        tap.halve(); tap.halve()
+        XCTAssertEqual(tap.calculatedBPM!, max(20, base / 2), accuracy: 0.001)
+    }
 }
