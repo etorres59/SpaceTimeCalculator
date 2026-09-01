@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var showTapTempo = false
     @State private var showMetronome = false
     @State private var showSettings = false
+    @State private var showInfo = false
     @State private var recordTask: Task<Void, Never>?
 
     private var appearance: AppAppearance { AppAppearance(rawValue: appearanceRaw) ?? .system }
@@ -79,22 +80,30 @@ struct ContentView: View {
             }
         }
         #endif
+        .sheet(isPresented: $showInfo) {
+            InfoView { showInfo = false }
+        }
     }
 
     // MARK: - Input column
 
     private var inputColumn: some View {
         VStack(spacing: 16) {
-            #if os(iOS)
-            HStack {
+            HStack(spacing: 18) {
                 Spacer()
-                Button { showSettings = true } label: {
-                    Image(systemName: "gearshape").imageScale(.large)
+                Button { showInfo = true } label: {
+                    Image(systemName: "questionmark.circle")
                 }
-                .tint(.brandPurple)
+                .accessibilityLabel("About and help")
+                #if os(iOS)
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape")
+                }
                 .accessibilityLabel("Settings")
+                #endif
             }
-            #endif
+            .imageScale(.large)
+            .tint(.brandPurple)
 
             VStack(spacing: 2) {
                 Text("SPACE & TIME")

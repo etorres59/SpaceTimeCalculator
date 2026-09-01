@@ -679,6 +679,78 @@ struct ContentUnavailableCompat: View {
     }
 }
 
+// MARK: - Info / help
+
+struct InfoView: View {
+    var onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    section("Why sync to tempo?", """
+                    Delay and reverb that line up with the beat sit in the pocket instead of \
+                    blurring it. Feed these numbers into your plugin's time, pre-delay, and \
+                    decay controls.
+                    """)
+
+                    section("The math", """
+                    One quarter note = 60000 ÷ BPM milliseconds. Everything else scales from \
+                    there — a whole note is ×4, an eighth ÷2. Dotted = ×1.5 (a note plus half \
+                    its length). Triplet = ×2⁄3 (three in the space of two).
+                    """)
+
+                    section("ms, Hz, samples", """
+                    ms is the delay time. Hz is that same value as a rate, for syncing LFOs, \
+                    tremolo, auto-pan, and filter movement. samples is for sample-delay plugins \
+                    and time-aligning mics or speakers, at your session's sample rate.
+                    """)
+
+                    section("Reverb", """
+                    Pre-delay is the gap before the tail starts — keep it short (1/64–1/16) so \
+                    the dry hit stays clear. Decay is how long the tail rings; sync it to a bar \
+                    or two so it resolves with the music. Total is when it has faded.
+                    """)
+
+                    section("Getting a tempo", """
+                    Type it, tap it in with Tap Tempo, or use Match mode: enter a delay time you \
+                    set by ear and the app finds the closest note value — and the exact BPM that \
+                    would land it on the grid.
+                    """)
+
+                    section("Tips", """
+                    • Tap any value to copy it; Copy All / Share exports the table.
+                    • Filter the Delay list to just the feels and note lengths you use.
+                    • Star a tempo to keep it; recent tempos stay in the chip strip.
+                    • On Mac, a menu bar item gives you the key times without switching apps.
+                    """)
+                }
+                .padding()
+            }
+
+            Divider()
+            Button("Done", action: onClose)
+                .buttonStyle(.borderedProminent)
+                .tint(.brandPurple)
+                .padding()
+        }
+        .frame(maxWidth: 560)
+        .background(Color.surface)
+    }
+
+    private func section(_ title: String, _ body: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(Color.brandPink)
+            Text(body)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 // MARK: - Settings
 
 struct SettingsView: View {
