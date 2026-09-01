@@ -210,6 +210,89 @@ struct NoteRow: View {
     }
 }
 
+// MARK: - Tempo history
+
+struct TempoChipsView: View {
+    @ObservedObject var history: TempoHistory
+    let current: Double
+    let isValid: Bool
+    var onPick: (Double) -> Void
+
+    @State private var namingNew = false
+    @State private var renameTarget: FavoriteTempo?
+    @State private var draftName = ""
+
+    var body: some View {
+        if isValid || !history.favorites.isEmpty || !history.recents.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    if isValid {
+                        Button {
+                            if history.isFavorite(current) {
+                                history.removeFavorite(bpm: current)
+                            } else {
+                                draftName = ""
+                                namingNew = true
+                            }
+                        } label: {
+                            Image(systemName: history.isFavorite(current) ? "star.fill" : "star")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.brandPink)
+                        .accessibilityLabel(history.isFavorite(current) ? "Remove this tempo from favourites" : "Save this tempo")
+                    }
+
+                    ForEach(history.favorites) { fav in
+                        chip(fav.name.isEmpty ? label(fav.bpm) : "\(fav.name) · \(label(fav.bpm))",
+                             icon: "star.fill", tint: .brandPink) { onPick(fav.bpm) }
+                            .contextMenu {
+                                Button("Rename") {
+                                    draftName = fav.name
+                                    renameTarget = fav
+                                }
+                                Button("Remove", role: .destructive) { history.removeFavorite(fav.id) }
+                            }
+                    }
+
+                    ForEach(history.recents.filter { !history.isFavorite($0) }, id: \.self) { bpm in
+                        chip(label(bpm), icon: nil, tint: .brandPurple) { onPick(bpm) }
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+            .alert("Name this tempo", isPresented: $namingNew) {
+                TextField("e.g. Verse", text: $draftName)
+                Button("Save") { history.addFavorite(current, name: draftName) }
+                Button("Cancel", role: .cancel) { }
+            }
+            .alert("Rename tempo", isPresented: Binding(get: { renameTarget != nil },
+                                                       set: { if !$0 { renameTarget = nil } }),
+                   presenting: renameTarget) { fav in
+                TextField("Name", text: $draftName)
+                Button("Save") { history.rename(fav.id, to: draftName) }
+                Button("Cancel", role: .cancel) { }
+            }
+        }
+    }
+
+    private func label(_ v: Double) -> String {
+        v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v)
+    }
+
+    private func chip(_ text: String, icon: String?, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                if let icon { Image(systemName: icon).imageScale(.small) }
+                Text(text).monospacedDigit()
+            }
+            .font(.subheadline)
+        }
+        .buttonStyle(.bordered)
+        .tint(tint)
+        .accessibilityLabel("\(text) BPM")
+    }
+}
+
 // MARK: - Reverb helper
 
 struct ReverbHelperView: View {

@@ -76,6 +76,75 @@ final class TimeCalculatorTests: XCTestCase {
     }
 }
 
+final class TempoHistoryTests: XCTestCase {
+
+    private func makeStore() -> (TempoHistory, UserDefaults, String) {
+        let suite = "test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        return (TempoHistory(defaults: defaults), defaults, suite)
+    }
+
+    override func tearDown() {
+        super.tearDown()
+    }
+
+    func testRecentsDedupeCapAndOrder() {
+        let (h, defaults, suite) = makeStore()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        for bpm in [100.0, 110, 120, 130, 140, 150, 160, 170, 180] { h.record(bpm) }
+        XCTAssertEqual(h.recents.count, TempoHistory.maxRecents)
+        XCTAssertEqual(h.recents.first, 180)          // most recent first
+        h.record(120)                                 // re-use an older value
+        XCTAssertEqual(h.recents.first, 120)
+        XCTAssertEqual(h.recents.filter { $0 == 120 }.count, 1)
+    }
+
+    func testRoundingDedupe() {
+        let (h, defaults, suite) = makeStore()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        h.record(120.04)
+        h.record(120.0)
+        XCTAssertEqual(h.recents, [120.0])
+    }
+
+    func testInvalidTempoIgnored() {
+        let (h, defaults, suite) = makeStore()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        h.record(0)
+        h.record(5000)
+        XCTAssertTrue(h.recents.isEmpty)
+    }
+
+    func testFavoriteAddIsFavoriteRemoveRename() {
+        let (h, defaults, suite) = makeStore()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        h.addFavorite(128, name: "Verse")
+        XCTAssertTrue(h.isFavorite(128))
+        XCTAssertTrue(h.isFavorite(127.98))          // rounding match
+        XCTAssertEqual(h.favorites.first?.name, "Verse")
+        h.addFavorite(128, name: "dup")              // no duplicate
+        XCTAssertEqual(h.favorites.count, 1)
+        h.rename(h.favorites[0].id, to: "Chorus")
+        XCTAssertEqual(h.favorites.first?.name, "Chorus")
+        h.removeFavorite(bpm: 128)
+        XCTAssertFalse(h.isFavorite(128))
+    }
+
+    func testPersistenceRoundTrip() {
+        let suite = "test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        do {
+            let h = TempoHistory(defaults: defaults)
+            h.record(140)
+            h.addFavorite(90, name: "Half-time")
+        }
+        let reloaded = TempoHistory(defaults: defaults)
+        XCTAssertEqual(reloaded.recents, [140])
+        XCTAssertEqual(reloaded.favorites.first?.name, "Half-time")
+    }
+}
+
 final class NoteMatchTests: XCTestCase {
 
     func testExactHitReportsZeroDeltaAndSameBPM() {

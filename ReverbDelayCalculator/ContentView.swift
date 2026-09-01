@@ -6,12 +6,14 @@ struct ContentView: View {
     @StateObject private var tapTempoCalculator = TapTempoCalculator()
     @StateObject private var reverbCalculator = ReverbCalculator()
     @StateObject private var metronome = MetronomeEngine()
+    @StateObject private var history = TempoHistory()
 
     @AppStorage("lastBPM") private var lastBPM = 120.0
     @State private var bpmText = ""
     @State private var showResults = false
     @State private var showTapTempo = false
     @State private var showMetronome = false
+    @State private var recordTask: Task<Void, Never>?
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -36,7 +38,10 @@ struct ContentView: View {
             bpmText = formattedBPM(lastBPM)
             timeCalculator.bpm = lastBPM
         }
-        .onChange(of: bpmText) { _ in syncBPM() }
+        .onChange(of: bpmText) { _ in
+            syncBPM()
+            scheduleRecord()
+        }
         .sheet(isPresented: $showResults) {
             ResultsView(calculator: timeCalculator, reverb: reverbCalculator,
                         onClose: { showResults = false }, onPickBPM: applyBPM)
@@ -96,6 +101,11 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
+
+                TempoChipsView(history: history,
+                               current: timeCalculator.bpm,
+                               isValid: timeCalculator.isValidBPM,
+                               onPick: applyBPM)
             }
 
             if isCompact {
@@ -151,9 +161,21 @@ struct ContentView: View {
         value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
     }
 
-    /// Push a tempo into the input field (used by Tap Tempo and Match mode).
+    /// Push a tempo into the input field (used by Tap Tempo, Match mode, and history chips).
     private func applyBPM(_ value: Double) {
-        bpmText = formattedBPM((value * 10).rounded() / 10)
+        let rounded = (value * 10).rounded() / 10
+        bpmText = formattedBPM(rounded)
+        history.record(rounded)
+    }
+
+    /// Record the current tempo once editing settles, so typing doesn't spam the recents list.
+    private func scheduleRecord() {
+        recordTask?.cancel()
+        recordTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            guard !Task.isCancelled, timeCalculator.isValidBPM else { return }
+            history.record(timeCalculator.bpm)
+        }
     }
 }
 
