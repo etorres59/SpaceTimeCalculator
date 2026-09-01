@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
 
 // MARK: - Results
 
@@ -674,3 +677,93 @@ struct ContentUnavailableCompat: View {
         .padding()
     }
 }
+
+// MARK: - macOS menu bar
+
+#if os(macOS)
+/// A glanceable version for `MenuBarExtra` — a BPM field and the delay times
+/// producers reach for most, without leaving the DAW.
+struct MenuBarView: View {
+    @AppStorage("lastBPM") private var bpm = 120.0
+    @State private var text = ""
+    @State private var copiedID: String?
+
+    private var isValid: Bool { TimeCalculator.validRange.contains(bpm) }
+
+    private let keyNotes: [NoteDuration] = [
+        NoteDuration(base: .quarter, modifier: .straight),
+        NoteDuration(base: .eighth, modifier: .dotted),
+        NoteDuration(base: .eighth, modifier: .straight),
+        NoteDuration(base: .eighth, modifier: .triplet),
+        NoteDuration(base: .sixteenth, modifier: .straight),
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Space & Time")
+                .font(.headline)
+
+            HStack {
+                Text("BPM")
+                TextField("", text: $text)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 72)
+                    .onSubmit(commit)
+            }
+
+            if isValid {
+                ForEach(keyNotes) { note in
+                    Button {
+                        Clipboard.copy(value(note))
+                        flash(note.id)
+                    } label: {
+                        HStack {
+                            Text(note.displayName)
+                            Spacer()
+                            Text(value(note)).monospacedDigit().foregroundStyle(.secondary)
+                            Image(systemName: copiedID == note.id ? "checkmark" : "doc.on.doc")
+                                .imageScale(.small)
+                                .foregroundStyle(copiedID == note.id ? Color.green : .secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                Text("Enter a tempo between 20 and 999.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Divider()
+            Button("Quit Space & Time") { NSApplication.shared.terminate(nil) }
+                .buttonStyle(.plain)
+        }
+        .padding(12)
+        .frame(width: 244)
+        .onAppear { text = label(bpm) }
+    }
+
+    private func value(_ note: NoteDuration) -> String {
+        String(format: "%.1f ms", note.milliseconds(bpm: bpm))
+    }
+
+    private func commit() {
+        if let parsed = Double(text.replacingOccurrences(of: ",", with: ".")),
+           TimeCalculator.validRange.contains(parsed) {
+            bpm = (parsed * 10).rounded() / 10
+        }
+        text = label(bpm)
+    }
+
+    private func label(_ v: Double) -> String {
+        v.rounded() == v ? String(Int(v)) : String(format: "%.1f", v)
+    }
+
+    private func flash(_ id: String) {
+        withAnimation { copiedID = id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            withAnimation { if copiedID == id { copiedID = nil } }
+        }
+    }
+}
+#endif

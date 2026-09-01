@@ -22,5 +22,12 @@ struct ReverbDelayCalculatorApp: App {
         .defaultSize(width: 900, height: 640)
         .windowResizability(.contentMinSize)
         #endif
+
+        #if os(macOS)
+        MenuBarExtra("Space & Time", systemImage: "metronome") {
+            MenuBarView()
+        }
+        .menuBarExtraStyle(.window)
+        #endif
     }
 }

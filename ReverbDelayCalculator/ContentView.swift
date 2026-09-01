@@ -42,6 +42,11 @@ struct ContentView: View {
             syncBPM()
             scheduleRecord()
         }
+        .onChange(of: lastBPM) { newValue in
+            // Pick up a tempo set from the macOS menu bar while this window is open.
+            let external = formattedBPM(newValue)
+            if external != bpmText { bpmText = external }
+        }
         .sheet(isPresented: $showResults) {
             ResultsView(calculator: timeCalculator, reverb: reverbCalculator,
                         onClose: { showResults = false }, onPickBPM: applyBPM)
