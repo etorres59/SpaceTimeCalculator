@@ -6,14 +6,18 @@ struct ContentView: View {
     @StateObject private var tapTempoCalculator = TapTempoCalculator()
     @StateObject private var reverbCalculator = ReverbCalculator()
     @StateObject private var metronome = MetronomeEngine()
-    @StateObject private var history = TempoHistory()
+    @EnvironmentObject private var history: TempoHistory
 
     @AppStorage("lastBPM") private var lastBPM = 120.0
+    @AppStorage("appearance") private var appearanceRaw = AppAppearance.system.rawValue
     @State private var bpmText = ""
     @State private var showResults = false
     @State private var showTapTempo = false
     @State private var showMetronome = false
+    @State private var showSettings = false
     @State private var recordTask: Task<Void, Never>?
+
+    private var appearance: AppAppearance { AppAppearance(rawValue: appearanceRaw) ?? .system }
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -34,6 +38,7 @@ struct ContentView: View {
             }
         }
         .background(Color.surface.ignoresSafeArea())
+        .preferredColorScheme(appearance.colorScheme)
         .onAppear {
             bpmText = formattedBPM(lastBPM)
             timeCalculator.bpm = lastBPM
@@ -67,12 +72,30 @@ struct ContentView: View {
                 showMetronome = false
             }
         }
+        #if os(iOS)
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView(history: history) { showSettings = false }
+            }
+        }
+        #endif
     }
 
     // MARK: - Input column
 
     private var inputColumn: some View {
         VStack(spacing: 16) {
+            #if os(iOS)
+            HStack {
+                Spacer()
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape").imageScale(.large)
+                }
+                .tint(.brandPurple)
+                .accessibilityLabel("Settings")
+            }
+            #endif
+
             VStack(spacing: 2) {
                 Text("SPACE & TIME")
                     .font(BrandFont.display(28, relativeTo: .largeTitle))
@@ -200,4 +223,5 @@ private extension View {
 
 #Preview {
     ContentView()
+        .environmentObject(TempoHistory())
 }

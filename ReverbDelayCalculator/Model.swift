@@ -190,14 +190,15 @@ final class TimeCalculator: ObservableObject {
     func exportText(unit: TimeUnit,
                     sampleRate: SampleRate,
                     feels: Set<NoteModifier> = Set(NoteModifier.allCases),
-                    shortest: NoteBase = .sixtyFourth) -> String {
+                    shortest: NoteBase = .sixtyFourth,
+                    msDecimals: Int = 1) -> String {
         guard isValidBPM else { return "Enter a valid tempo first." }
         var lines = ["Space & Time — \(Int(bpm)) BPM (\(unit.label)\(unit == .samples ? " @ \(sampleRate.label)" : ""))"]
         for group in NoteDuration.grouped(feels: feels, shortest: shortest) {
             lines.append("")
             lines.append(group.base.sectionTitle)
             for note in group.durations {
-                lines.append("  \(note.displayName): \(formatted(note, unit: unit, sampleRate: sampleRate))")
+                lines.append("  \(note.displayName): \(formatted(note, unit: unit, sampleRate: sampleRate, msDecimals: msDecimals))")
             }
         }
         return lines.joined(separator: "\n")

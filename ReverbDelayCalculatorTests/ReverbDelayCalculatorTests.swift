@@ -61,6 +61,15 @@ final class TimeCalculatorTests: XCTestCase {
         XCTAssertEqual(calc.formatted(quarter, unit: .samples, sampleRate: .sr48000), "24000 smp")
     }
 
+    func testFormattedHonoursDecimalSetting() {
+        let calc = TimeCalculator(bpm: 120)
+        let triplet = NoteDuration(base: .eighth, modifier: .triplet)   // 166.666… ms
+        XCTAssertEqual(calc.formatted(triplet, unit: .milliseconds, sampleRate: .sr48000, msDecimals: 0), "167 ms")
+        XCTAssertEqual(calc.formatted(triplet, unit: .milliseconds, sampleRate: .sr48000, msDecimals: 2), "166.67 ms")
+        let text = calc.exportText(unit: .milliseconds, sampleRate: .sr48000, msDecimals: 0)
+        XCTAssertTrue(text.contains("Quarter Note: 500 ms"))
+    }
+
     func testFormattedWithInvalidBPM() {
         let calc = TimeCalculator(bpm: 0)
         let quarter = NoteDuration(base: .quarter, modifier: .straight)

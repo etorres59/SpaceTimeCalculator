@@ -10,6 +10,9 @@ import SwiftUI
 
 @main
 struct ReverbDelayCalculatorApp: App {
+    /// Shared so the main window, the macOS menu bar, and Settings all see the same list.
+    @StateObject private var history = TempoHistory()
+
     init() {
         BrandFont.registerIfNeeded()
     }
@@ -17,6 +20,7 @@ struct ReverbDelayCalculatorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(history)
         }
         #if os(macOS)
         .defaultSize(width: 900, height: 640)
@@ -28,6 +32,10 @@ struct ReverbDelayCalculatorApp: App {
             MenuBarView()
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(history: history)
+        }
         #endif
     }
 }

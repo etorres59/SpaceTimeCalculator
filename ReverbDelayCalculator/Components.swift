@@ -50,6 +50,7 @@ struct ResultsView: View {
     @AppStorage("sampleRate") private var sampleRateRaw = SampleRate.sr48000.rawValue
     @AppStorage("feelFilter") private var feelRaw = "Straight,Dotted,Triplet"
     @AppStorage("shortestNote") private var shortestRaw = NoteBase.sixtyFourth.rawValue
+    @AppStorage("msDecimals") private var msDecimals = 1
     @State private var copiedID: String?
 
     private var mode: ResultMode {
@@ -108,7 +109,7 @@ struct ResultsView: View {
 
     private var copyAllText: String {
         mode == .delay
-            ? calculator.exportText(unit: unit, sampleRate: sampleRate, feels: feels, shortest: shortest)
+            ? calculator.exportText(unit: unit, sampleRate: sampleRate, feels: feels, shortest: shortest, msDecimals: msDecimals)
             : reverb.exportText(bpm: calculator.bpm)
     }
 
@@ -197,10 +198,10 @@ struct ResultsView: View {
                         ForEach(group.durations) { note in
                             NoteRow(
                                 name: note.displayName,
-                                value: calculator.formatted(note, unit: unit, sampleRate: sampleRate),
+                                value: calculator.formatted(note, unit: unit, sampleRate: sampleRate, msDecimals: msDecimals),
                                 isCopied: copiedID == note.id
                             ) {
-                                Clipboard.copy(calculator.formatted(note, unit: unit, sampleRate: sampleRate))
+                                Clipboard.copy(calculator.formatted(note, unit: unit, sampleRate: sampleRate, msDecimals: msDecimals))
                                 flash(note.id)
                             }
                             if note.id != group.durations.last?.id {
@@ -675,6 +676,68 @@ struct ContentUnavailableCompat: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+}
+
+// MARK: - Settings
+
+struct SettingsView: View {
+    @ObservedObject var history: TempoHistory
+    /// Non-nil on iOS, where Settings is a sheet.
+    var onClose: (() -> Void)?
+
+    @AppStorage("appearance") private var appearanceRaw = AppAppearance.system.rawValue
+    @AppStorage("msDecimals") private var msDecimals = 1
+    @AppStorage("sampleRate") private var sampleRateRaw = SampleRate.sr48000.rawValue
+
+    var body: some View {
+        Form {
+            Section("Appearance") {
+                Picker("Theme", selection: $appearanceRaw) {
+                    ForEach(AppAppearance.allCases) { Text($0.label).tag($0.rawValue) }
+                }
+                #if os(iOS)
+                .pickerStyle(.segmented)
+                #endif
+            }
+
+            Section("Formatting") {
+                Stepper("Millisecond decimals: \(msDecimals)", value: $msDecimals, in: 0...3)
+                Picker("Default sample rate", selection: Binding(
+                    get: { SampleRate(rawValue: sampleRateRaw) ?? .sr48000 },
+                    set: { sampleRateRaw = $0.rawValue })) {
+                    ForEach(SampleRate.allCases) { Text($0.label).tag($0) }
+                }
+            }
+
+            Section("Tempo history") {
+                Button("Clear recent tempos", role: .destructive) { history.clearRecents() }
+                    .disabled(history.recents.isEmpty)
+            }
+
+            Section {
+                LabeledContent("Version", value: appVersion)
+                LabeledContent("By", value: "Evan Torres")
+            }
+        }
+        .formStyle(.grouped)
+        .frame(minWidth: 360, minHeight: 340)
+        #if os(iOS)
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let onClose {
+                ToolbarItem(placement: .confirmationAction) { Button("Done", action: onClose) }
+            }
+        }
+        #endif
+    }
+
+    private var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "\(short) (\(build))"
     }
 }
 
