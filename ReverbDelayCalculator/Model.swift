@@ -12,7 +12,7 @@ import Combine
 // MARK: - Note values
 
 /// A base note value, measured in quarter-note beats.
-enum NoteBase: String, CaseIterable, Identifiable {
+enum NoteBase: String, CaseIterable, Identifiable, Sendable {
     case whole = "Whole"
     case half = "Half"
     case quarter = "Quarter"
@@ -54,7 +54,7 @@ enum NoteBase: String, CaseIterable, Identifiable {
 }
 
 /// Straight / dotted / triplet feel.
-enum NoteModifier: String, CaseIterable, Identifiable {
+enum NoteModifier: String, CaseIterable, Identifiable, Sendable {
     case straight = "Straight"
     case dotted = "Dotted"
     case triplet = "Triplet"
@@ -129,7 +129,7 @@ struct NoteDuration: Identifiable {
 
 // MARK: - Units
 
-enum TimeUnit: String, CaseIterable, Identifiable {
+enum TimeUnit: String, CaseIterable, Identifiable, Sendable {
     case milliseconds = "ms"
     case hertz = "Hz"
     case samples = "smp"

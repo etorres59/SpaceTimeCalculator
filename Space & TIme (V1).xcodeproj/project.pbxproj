@@ -22,6 +22,7 @@
 		AA1000000000000000003002 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000003001 /* Components.swift */; };
 		AA1000000000000000004002 /* Metronome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000004001 /* Metronome.swift */; };
 		AA1000000000000000005002 /* TempoHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000005001 /* TempoHistory.swift */; };
+		AA1000000000000000006002 /* Intents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1000000000000000006001 /* Intents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 		AA1000000000000000003001 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		AA1000000000000000004001 /* Metronome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Metronome.swift; sourceTree = "<group>"; };
 		AA1000000000000000005001 /* TempoHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoHistory.swift; sourceTree = "<group>"; };
+		AA1000000000000000006001 /* Intents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +120,7 @@
 				AA1000000000000000003001 /* Components.swift */,
 				AA1000000000000000004001 /* Metronome.swift */,
 				AA1000000000000000005001 /* TempoHistory.swift */,
+				AA1000000000000000006001 /* Intents.swift */,
 				873975C12CC1A06A0022D8D1 /* Assets.xcassets */,
 				873975C32CC1A06A0022D8D1 /* Preview Content */,
 			);
@@ -289,6 +292,7 @@
 				AA1000000000000000003002 /* Components.swift in Sources */,
 				AA1000000000000000004002 /* Metronome.swift in Sources */,
 				AA1000000000000000005002 /* TempoHistory.swift in Sources */,
+				AA1000000000000000006002 /* Intents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
