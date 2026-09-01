@@ -45,6 +45,14 @@ final class NoteDurationTests: XCTestCase {
 
 final class TimeCalculatorTests: XCTestCase {
 
+    func testNudgeRoundsAndClamps() {
+        XCTAssertEqual(TimeCalculator.nudge(120, by: 1), 121, accuracy: 0.0001)
+        XCTAssertEqual(TimeCalculator.nudge(120, by: 0.1), 120.1, accuracy: 0.0001)
+        XCTAssertEqual(TimeCalculator.nudge(120.04, by: 0), 120, accuracy: 0.0001)   // rounds to 0.1
+        XCTAssertEqual(TimeCalculator.nudge(995, by: 10), 999, accuracy: 0.0001)     // clamps high
+        XCTAssertEqual(TimeCalculator.nudge(22, by: -10), 20, accuracy: 0.0001)      // clamps low
+    }
+
     func testValidRangeBoundaries() {
         let calc = TimeCalculator()
         calc.bpm = 19;  XCTAssertFalse(calc.isValidBPM)

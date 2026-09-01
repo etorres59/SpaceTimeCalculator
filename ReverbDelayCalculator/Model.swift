@@ -166,6 +166,12 @@ final class TimeCalculator: ObservableObject {
 
     var isValidBPM: Bool { Self.validRange.contains(bpm) }
 
+    /// `bpm` shifted by `delta`, rounded to 0.1 and clamped to the valid range.
+    static func nudge(_ bpm: Double, by delta: Double) -> Double {
+        let shifted = ((bpm + delta) * 10).rounded() / 10
+        return min(validRange.upperBound, max(validRange.lowerBound, shifted))
+    }
+
     var validationMessage: String? {
         isValidBPM ? nil : "Enter a tempo between \(Int(Self.validRange.lowerBound)) and \(Int(Self.validRange.upperBound)) BPM."
     }

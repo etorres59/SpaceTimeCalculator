@@ -174,6 +174,7 @@ struct ResultsView: View {
                     } label: {
                         Label(copiedID == "all" ? "Copied" : "Copy all", systemImage: copiedID == "all" ? "checkmark" : "doc.on.doc")
                     }
+                    .keyboardShortcut("c", modifiers: .command)
                     Spacer()
                     ShareLink(item: copyAllText) {
                         Label("Share", systemImage: "square.and.arrow.up")

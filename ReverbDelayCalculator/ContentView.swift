@@ -83,6 +83,24 @@ struct ContentView: View {
         .sheet(isPresented: $showInfo) {
             InfoView { showInfo = false }
         }
+        .background(keyboardShortcuts)
+    }
+
+    /// Hardware-keyboard shortcuts (iPad / Mac). Zero-size and transparent, but
+    /// still register with the responder chain.
+    private var keyboardShortcuts: some View {
+        Group {
+            Button("") { nudgeBPM(1) }.keyboardShortcut(.upArrow, modifiers: .option)
+            Button("") { nudgeBPM(-1) }.keyboardShortcut(.downArrow, modifiers: .option)
+            Button("") { nudgeBPM(10) }.keyboardShortcut(.upArrow, modifiers: [.option, .shift])
+            Button("") { nudgeBPM(-10) }.keyboardShortcut(.downArrow, modifiers: [.option, .shift])
+            Button("") { nudgeBPM(0.1) }.keyboardShortcut(.upArrow, modifiers: .command)
+            Button("") { nudgeBPM(-0.1) }.keyboardShortcut(.downArrow, modifiers: .command)
+            Button("") { showTapTempo = true }.keyboardShortcut("t", modifiers: .command)
+        }
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Input column
@@ -203,6 +221,11 @@ struct ContentView: View {
         let rounded = (value * 10).rounded() / 10
         bpmText = formattedBPM(rounded)
         history.record(rounded)
+    }
+
+    private func nudgeBPM(_ delta: Double) {
+        let current = Double(bpmText.replacingOccurrences(of: ",", with: ".")) ?? timeCalculator.bpm
+        bpmText = formattedBPM(TimeCalculator.nudge(current, by: delta))
     }
 
     /// Record the current tempo once editing settles, so typing doesn't spam the recents list.
