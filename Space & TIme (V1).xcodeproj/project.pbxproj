@@ -61,6 +61,7 @@
 		AA1000000000000000004001 /* Metronome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Metronome.swift; sourceTree = "<group>"; };
 		AA1000000000000000005001 /* TempoHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoHistory.swift; sourceTree = "<group>"; };
 		AA1000000000000000006001 /* Intents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intents.swift; sourceTree = "<group>"; };
+		AA1000000000000000007001 /* SpaceAndTime.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SpaceAndTime.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +122,7 @@
 				AA1000000000000000004001 /* Metronome.swift */,
 				AA1000000000000000005001 /* TempoHistory.swift */,
 				AA1000000000000000006001 /* Intents.swift */,
+				AA1000000000000000007001 /* SpaceAndTime.entitlements */,
 				873975C12CC1A06A0022D8D1 /* Assets.xcassets */,
 				873975C32CC1A06A0022D8D1 /* Preview Content */,
 			);
@@ -457,6 +459,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = "ReverbDelayCalculator/SpaceAndTime.entitlements";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ReverbDelayCalculator/Preview Content\"";
 				DEVELOPMENT_TEAM = 6NN472U8JA;
@@ -498,6 +501,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = "ReverbDelayCalculator/SpaceAndTime.entitlements";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ReverbDelayCalculator/Preview Content\"";
 				DEVELOPMENT_TEAM = 6NN472U8JA;
@@ -583,13 +587,17 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ETAudio.ReverbDelayCalculatorUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = ReverbDelayCalculator;
+				TEST_TARGET_NAME = "Space & TIme (V1)";
 			};
 			name = Debug;
 		};
@@ -600,13 +608,17 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ETAudio.ReverbDelayCalculatorUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = ReverbDelayCalculator;
+				TEST_TARGET_NAME = "Space & TIme (V1)";
 			};
 			name = Release;
 		};

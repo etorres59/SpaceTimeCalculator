@@ -128,8 +128,9 @@ struct ContentView: View {
                     .font(BrandFont.display(28, relativeTo: .largeTitle))
                 Image("Space and time In app image 2")
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
                     .frame(width: 96, height: 96)
+                    .background(Color.white, in: Circle())   // the mark is dark linework — keep a light disc behind it in dark mode
                     .clipShape(Circle())
                     .accessibilityHidden(true)
                 Text("Reverb & Delay Calculator")
