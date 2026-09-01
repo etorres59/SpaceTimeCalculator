@@ -76,6 +76,40 @@ final class TimeCalculatorTests: XCTestCase {
     }
 }
 
+final class SubdivisionFilterTests: XCTestCase {
+
+    func testAllFeelsFullRangeMatchesUnfiltered() {
+        let filtered = NoteDuration.grouped(feels: Set(NoteModifier.allCases), shortest: .sixtyFourth)
+        XCTAssertEqual(filtered.map(\.base), NoteDuration.grouped.map(\.base))
+        XCTAssertEqual(filtered.reduce(0) { $0 + $1.durations.count }, NoteDuration.all.count)
+    }
+
+    func testStraightOnlyDownToEighth() {
+        let groups = NoteDuration.grouped(feels: [.straight], shortest: .eighth)
+        XCTAssertEqual(groups.map(\.base), [.whole, .half, .quarter, .eighth])
+        XCTAssertTrue(groups.allSatisfy { $0.durations.count == 1 && $0.durations[0].modifier == .straight })
+    }
+
+    func testDottedAndTripletDownToQuarter() {
+        let groups = NoteDuration.grouped(feels: [.dotted, .triplet], shortest: .quarter)
+        XCTAssertEqual(groups.map(\.base), [.whole, .half, .quarter])
+        XCTAssertEqual(groups.reduce(0) { $0 + $1.durations.count }, 6)
+        XCTAssertFalse(groups.flatMap(\.durations).contains { $0.modifier == .straight })
+    }
+
+    func testNoFeelsYieldsNothing() {
+        XCTAssertTrue(NoteDuration.grouped(feels: [], shortest: .sixtyFourth).isEmpty)
+    }
+
+    func testExportTextHonoursFilter() {
+        let text = TimeCalculator(bpm: 120).exportText(
+            unit: .milliseconds, sampleRate: .sr48000, feels: [.triplet], shortest: .quarter)
+        XCTAssertTrue(text.contains("Triplet Quarter Note"))
+        XCTAssertFalse(text.contains("Eighth"))
+        XCTAssertFalse(text.contains("Dotted"))
+    }
+}
+
 final class TempoHistoryTests: XCTestCase {
 
     private func makeStore() -> (TempoHistory, UserDefaults, String) {

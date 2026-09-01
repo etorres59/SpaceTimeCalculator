@@ -45,6 +45,8 @@ struct ResultsView: View {
     @AppStorage("resultMode") private var modeRaw = ResultMode.delay.rawValue
     @AppStorage("unit") private var unitRaw = TimeUnit.milliseconds.rawValue
     @AppStorage("sampleRate") private var sampleRateRaw = SampleRate.sr48000.rawValue
+    @AppStorage("feelFilter") private var feelRaw = "Straight,Dotted,Triplet"
+    @AppStorage("shortestNote") private var shortestRaw = NoteBase.sixtyFourth.rawValue
     @State private var copiedID: String?
 
     private var mode: ResultMode {
@@ -58,6 +60,22 @@ struct ResultsView: View {
     private var sampleRate: SampleRate {
         get { SampleRate(rawValue: sampleRateRaw) ?? .sr48000 }
         nonmutating set { sampleRateRaw = newValue.rawValue }
+    }
+    private var feels: Set<NoteModifier> {
+        let set = Set(feelRaw.split(separator: ",").compactMap { NoteModifier(rawValue: String($0)) })
+        return set.isEmpty ? [.straight] : set
+    }
+    private var shortest: NoteBase {
+        get { NoteBase(rawValue: shortestRaw) ?? .sixtyFourth }
+        nonmutating set { shortestRaw = newValue.rawValue }
+    }
+    private var isFiltered: Bool { feels.count < NoteModifier.allCases.count || shortest != .sixtyFourth }
+
+    private func setFeel(_ modifier: NoteModifier, on: Bool) {
+        var set = feels
+        if on { set.insert(modifier) } else { set.remove(modifier) }
+        guard !set.isEmpty else { return }   // always leave one feel visible
+        feelRaw = NoteModifier.allCases.filter { set.contains($0) }.map(\.rawValue).joined(separator: ",")
     }
 
     var body: some View {
@@ -87,7 +105,7 @@ struct ResultsView: View {
 
     private var copyAllText: String {
         mode == .delay
-            ? calculator.exportText(unit: unit, sampleRate: sampleRate)
+            ? calculator.exportText(unit: unit, sampleRate: sampleRate, feels: feels, shortest: shortest)
             : reverb.exportText(bpm: calculator.bpm)
     }
 
@@ -124,6 +142,24 @@ struct ResultsView: View {
                     .pickerStyle(.menu)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                Menu {
+                    Section("Feel") {
+                        ForEach(NoteModifier.allCases) { modifier in
+                            Toggle(modifier.rawValue, isOn: Binding(
+                                get: { feels.contains(modifier) },
+                                set: { setFeel(modifier, on: $0) }))
+                        }
+                    }
+                    Picker("Shortest note", selection: Binding(get: { shortest }, set: { shortest = $0 })) {
+                        ForEach(NoteBase.allCases) { Text($0.fractionLabel).tag($0) }
+                    }
+                } label: {
+                    Label(isFiltered ? "Filtered" : "Filter",
+                          systemImage: isFiltered ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                }
+                .font(.subheadline)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if calculator.isValidBPM && mode != .match {
@@ -150,7 +186,7 @@ struct ResultsView: View {
     private var results: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
-                ForEach(NoteDuration.grouped, id: \.base.id) { group in
+                ForEach(NoteDuration.grouped(feels: feels, shortest: shortest), id: \.base.id) { group in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(group.base.sectionTitle)
                             .font(.headline)

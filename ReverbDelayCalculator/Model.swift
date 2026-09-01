@@ -113,6 +113,18 @@ struct NoteDuration: Identifiable {
         NoteBase.allCases.map { base in
             (base, all.filter { $0.base == base })
         }
+
+    /// `grouped`, keeping only the chosen feels and note values no shorter than `shortest`.
+    /// Empty sections are dropped.
+    static func grouped(feels: Set<NoteModifier>,
+                        shortest: NoteBase) -> [(base: NoteBase, durations: [NoteDuration])] {
+        NoteBase.allCases
+            .filter { $0.beats >= shortest.beats }
+            .map { base in
+                (base, all.filter { $0.base == base && feels.contains($0.modifier) })
+            }
+            .filter { !$0.durations.isEmpty }
+    }
 }
 
 // MARK: - Units
@@ -174,11 +186,14 @@ final class TimeCalculator: ObservableObject {
         }
     }
 
-    /// Plain-text table of every subdivision, for Copy All / share.
-    func exportText(unit: TimeUnit, sampleRate: SampleRate) -> String {
+    /// Plain-text table of the visible subdivisions, for Copy All / share.
+    func exportText(unit: TimeUnit,
+                    sampleRate: SampleRate,
+                    feels: Set<NoteModifier> = Set(NoteModifier.allCases),
+                    shortest: NoteBase = .sixtyFourth) -> String {
         guard isValidBPM else { return "Enter a valid tempo first." }
         var lines = ["Space & Time — \(Int(bpm)) BPM (\(unit.label)\(unit == .samples ? " @ \(sampleRate.label)" : ""))"]
-        for group in NoteDuration.grouped {
+        for group in NoteDuration.grouped(feels: feels, shortest: shortest) {
             lines.append("")
             lines.append(group.base.sectionTitle)
             for note in group.durations {
